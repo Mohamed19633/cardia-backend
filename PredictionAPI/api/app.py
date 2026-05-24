@@ -1,57 +1,88 @@
-from flask import Flask, request, jsonify
-import joblib
-import numpy as np
 import os
+import joblib
+import pandas as pd
+import numpy as np
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# ==========================================================
-# load the paths 
-# ==========================================================
+# --- Directory Configuration ---
+# Resolve the absolute path of the current file's directory
+BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+def get_full_path(file_name):
+    return os.path.join(BASE_PATH, file_name)
 
+# --- Model and Asset Loading ---
+try:
+    # Loading serialized model, scaler, and label encoders
+    encoders = joblib.load(get_full_path('../model/label_encoders.pkl'))
+    model = joblib.load(get_full_path('../model/heart_disease_best_model.pkl'))
+    scaler = joblib.load(get_full_path('../model/scaler.pkl'))
 
-MODEL_DIR = os.path.join(BASE_DIR, "..", "model")
+    # Optimized threshold determined during training to maintain ~91% Recall
+    OPTIMIZED_THRESHOLD = 0.45
 
-model = joblib.load(os.path.join(MODEL_DIR, "heart_model.pkl"))
-scaler = joblib.load(os.path.join(MODEL_DIR, "scaler.pkl"))
-columns = joblib.load(os.path.join(MODEL_DIR, "columns.pkl"))
+    print(f"✅ Production assets loaded successfully from: {BASE_PATH}")
+except Exception as e:
+    print(f"❌ Critical Error: Failed to load production assets. Details: {e}")
 
-# ==========================================================
-# Routes
-# ==========================================================
-@app.route("/predict", methods=["POST"])
+@app.route('/')
+def index():
+    """Service health check endpoint."""
+    return "Heart Disease Prediction API Service is Active."
+
+@app.route('/predict', methods=['POST'])
 def predict():
-    data = request.json
-    input_data = []
+    """
+    Main prediction endpoint.
+    Expects a JSON object containing patient features.
+    """
+    try:
+        # 1. Parse incoming JSON request
+        request_data = request.get_json()
+        if not request_data:
+            return jsonify({"status": "error", "message": "No input data provided"}), 400
 
-    for col in columns:
-        input_data.append(data.get(col, 0))
+        # 2. Construct DataFrame from input data
+        input_df = pd.DataFrame([request_data])
 
-    input_data = np.array(input_data).reshape(1, -1)
-    input_data = scaler.transform(input_data)
+        # 3. Categorical Encoding
+        # Transform string labels to numerical values using stored LabelEncoders
+        for col, le in encoders.items():
+            if col in input_df.columns:
+                try:
+                    input_df[col] = le.transform(input_df[col].astype(str))
+                except Exception:
+                    # Fallback to default class if an unseen label is encountered
+                    input_df[col] = le.transform([le.classes_[0]])[0]
 
-    prediction = model.predict(input_data)[0]
-    prob = model.predict_proba(input_data)[0][1]
+        # 4. Feature Scaling
+        # Normalize numerical features using the pre-fitted StandardScaler
+        scaled_features = scaler.transform(input_df)
 
-    if int(prediction) <= 0:
+        # 5. Model Inference
+        # Obtain probability of the positive class (Heart Disease)
+        probability = model.predict_proba(scaled_features)[:, 1][0]
+
+        # Apply the optimized threshold for final classification
+        prediction = 1 if probability >= OPTIMIZED_THRESHOLD else 0
+
+        # 6. Response Construction
         return jsonify({
-            "prediction": "NO",
-        })
-    else:
-        return jsonify({
-            "prediction": "YES",
-            "probability": str(round(float(prob), 4))
+            "status": "success",
+            "prediction": int(prediction),
+            "diagnosis": "Heart Disease Detected" if prediction == 1 else "Healthy",
+            "risk_probability": f"{round(probability * 100, 2)}%",
+            "model_metadata": {
+                "target_recall": "91%",
+                "operating_threshold": OPTIMIZED_THRESHOLD
+            }
         })
 
-@app.route("/")
-def home():
-    return "API Running 🚀 Directed by 7oda ✌😎"
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
-# ==========================================================
-# Run
-# ==========================================================
-if __name__ == "__main__":
-    print("Starting Flask server with dynamic paths...")
+if __name__ == '__main__':
+    # Initialize the Flask development server on port 5000
     app.run(debug=True, port=5000)
