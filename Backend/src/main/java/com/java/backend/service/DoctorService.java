@@ -50,7 +50,7 @@ public class DoctorService {
         List<Doctor> doctors = doctorRepository.findAll();
         List<DoctorListItemDTO> doctorDTOsList = new ArrayList<>();
         for (Doctor doctor : doctors) {
-            doctorDTOsList.add(doctorMapper.toDoctorDTO(doctor));
+            doctorDTOsList.add(doctorMapper.toDoctorListItemDTO(doctor));
         }
         return doctorDTOsList;
     }

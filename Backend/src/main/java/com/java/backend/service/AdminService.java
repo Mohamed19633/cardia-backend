@@ -45,11 +45,9 @@ public class AdminService {
     }
 
     public List<PersonDTO> getAllUsersExceptAdmins(String email) {
-        //get all users from person repository
-        List<Person> users = personRepository.findAll();
-        // loop and except admins
-        return  users.stream().filter(user -> !user.getRole().getName().equals("ADMIN"))
-                .map(personMapper::toDto).toList();
+        //get all users except admins from person repository
+        List<Person> users = personRepository.findAllExceptAdmins();
+        return  users.stream().map(personMapper::toDto).toList();
     }
 
     public PersonDTO viewUser(Long id) {

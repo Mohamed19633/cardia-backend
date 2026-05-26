@@ -14,9 +14,11 @@ public class Prediction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String predictionResult;
+    private String diagnosis;
 
-    private String riskScore;
+    private Double riskProbability;
+
+    private String riskCategory;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
