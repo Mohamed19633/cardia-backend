@@ -1,5 +1,7 @@
 package com.java.backend.dto;
 
+import com.java.backend.model.Appointment;
+import com.java.backend.model.MedicalTest;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;
@@ -53,15 +55,10 @@ public class PatientDTO {
     @NotBlank(message = "Country is required")
     private String country;
 
-    @Email(message = "Email is Invalid")
-    @Pattern(
-            regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
-            message = "Email must contain a valid domain like .com or .net"
-    )
-    private String doctorEmail;
-
     private List<PrescriptionDTO> prescriptions;
 
-   private List<PredictionResultDTO> predictions;
+   private List<PatientMedicalTestsViewDTO> medicalTests;
+
+   private List<AppointmentListPatientViewDTO> appointments;
 
 }

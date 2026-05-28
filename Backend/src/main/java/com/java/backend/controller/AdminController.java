@@ -1,11 +1,11 @@
 package com.java.backend.controller;
 
 import com.java.backend.dto.DoctorDTO;
+import com.java.backend.dto.PatientMedicalTestsViewDTO;
 import com.java.backend.dto.PersonDTO;
-import com.java.backend.dto.PredictionResultDTO;
 import com.java.backend.model.Patient;
 import com.java.backend.service.AdminService;
-import com.java.backend.service.PredictionService;
+import com.java.backend.service.MedicalTestService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,12 +20,12 @@ import java.util.Map;
 @RequestMapping("api/admin")
 public class AdminController {
 
-    private final PredictionService predictionService;
+    private final MedicalTestService medicalTestService;
     private final AdminService adminService;
 
-    public AdminController(AdminService adminService, PredictionService predictionService){
+    public AdminController(AdminService adminService, MedicalTestService medicalTestService){
         this.adminService = adminService;
-        this.predictionService = predictionService;
+        this.medicalTestService = medicalTestService;
     }
 
     @GetMapping("/users")
@@ -49,22 +49,22 @@ public class AdminController {
         return ResponseEntity.ok("User Id: "+id+" Deleted successfully");
     }
 
-    @GetMapping("/predictions")
-    public  ResponseEntity<List<PredictionResultDTO>> viewAllPredictions(){
-       List<PredictionResultDTO> predictionList =  adminService.getAllPredictions();
-       return ResponseEntity.ok(predictionList);
+    @GetMapping("/medical-tests")
+    public  ResponseEntity<List<PatientMedicalTestsViewDTO>> viewAllMedicalTests(){
+       List<PatientMedicalTestsViewDTO> medicalTestsViewDTOS =  adminService.getMedicalTestsDTOS();
+       return ResponseEntity.ok(medicalTestsViewDTOS);
     }
 
-    @GetMapping("/predictions/{id}/patient")
-    public ResponseEntity<PersonDTO> getPatientOfPrediction(@PathVariable Long id){
-        Patient patient = predictionService.getPatientOfPrediction(id);
+    @GetMapping("/medical-tests/{testId}/patient")
+    public ResponseEntity<PersonDTO> getPatientOfMedicalTest(@PathVariable Long testId){
+        Patient patient = medicalTestService.getPatientOfMedicalTest(testId);
         return viewUser(patient.getId());
     }
 
-    @DeleteMapping("/predictions/{id}")
-    public ResponseEntity<String> deletePrediction(@PathVariable Long id){
-        predictionService.deleteById(id);
-        return ResponseEntity.ok("Prediction with id: "+id+" has been deleted.");
+    @DeleteMapping("/medical-test/{id}")
+    public ResponseEntity<String> deleteMedicalTest(@PathVariable Long id){
+        medicalTestService.deleteById(id);
+        return ResponseEntity.ok("Medical test with id: "+id+" has been deleted.");
     }
 
     @PostMapping("/doctors")

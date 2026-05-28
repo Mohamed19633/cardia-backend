@@ -18,7 +18,4 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
 
     Optional<Patient> findByName(String patientName);
 
-    @Modifying
-    @Query("UPDATE Patient p SET p.doctor = NULL WHERE p.doctor.id = :doctorId")
-    void removeDoctorFromPatients(Long doctorId);
 }

@@ -1,18 +1,9 @@
 package com.java.backend.service;
 
-import com.java.backend.dto.DoctorListItemDTO;
-import com.java.backend.dto.PatientListItemDTO;
-import com.java.backend.dto.PredictionResultDTO;
-import com.java.backend.dto.PrescriptionDTO;
+import com.java.backend.dto.*;
 import com.java.backend.exception.UserNotFoundException;
-import com.java.backend.mapper.DoctorMapper;
-import com.java.backend.mapper.PatientMapper;
-import com.java.backend.mapper.PredictionMapper;
-import com.java.backend.mapper.PrescriptionMapper;
-import com.java.backend.model.Doctor;
-import com.java.backend.model.Patient;
-import com.java.backend.model.Prediction;
-import com.java.backend.model.Prescription;
+import com.java.backend.mapper.*;
+import com.java.backend.model.*;
 import com.java.backend.repository.DoctorRepository;
 import com.java.backend.repository.PatientRepository;
 import com.java.backend.repository.PrescriptionRepository;
@@ -32,18 +23,20 @@ public class DoctorService {
     private final PatientRepository patientRepository;
     private final DoctorMapper doctorMapper;
     private final PatientMapper patientMapper;
-    private final PredictionMapper predictionMapper;
     private final PrescriptionMapper prescriptionMapper;
     private PrescriptionRepository prescriptionRepository;
+    private AppointmentMapper appointmentMapper;
+    private MedicalTestsMapper medicalTestsMapper;
 
-    public DoctorService(DoctorRepository doctorRepository,PrescriptionRepository prescriptionRepository, PatientRepository patientRepository, DoctorMapper doctorMapper, PatientMapper patientMapper, PredictionMapper predictionMapper, PrescriptionMapper prescriptionMapper) {
+    public DoctorService(DoctorRepository doctorRepository,MedicalTestsMapper medicalTestsMapper, AppointmentMapper appointmentMapper, PrescriptionRepository prescriptionRepository, PatientRepository patientRepository, DoctorMapper doctorMapper, PatientMapper patientMapper, PrescriptionMapper prescriptionMapper) {
         this.doctorRepository = doctorRepository;
         this.patientRepository = patientRepository;
         this.doctorMapper = doctorMapper;
-        this.predictionMapper = predictionMapper;
         this.patientMapper = patientMapper;
         this.prescriptionMapper = prescriptionMapper;
         this.prescriptionRepository = prescriptionRepository;
+        this.appointmentMapper = appointmentMapper;
+        this.medicalTestsMapper = medicalTestsMapper;
     }
 
     public List<DoctorListItemDTO> getAllDoctors() {
@@ -55,37 +48,37 @@ public class DoctorService {
         return doctorDTOsList;
     }
 
-    public List<PatientListItemDTO> getPatientList(String email) {
+    public List<AppointmentListDoctorViewDTO> getAppointmentListDTO(String email) {
         Optional<Doctor> doctor = doctorRepository.findByEmail(email);
         if (doctor.isEmpty()) {
             throw new UserNotFoundException("User With Email = " + email + " Not Found");
         }
-        List<Patient> patientList = doctor.get().getPatientList();
-        return patientList.stream().map(patientMapper::toPatientDTOList).toList();
+        List<Appointment> appointmentList = doctor.get().getAppointments();
+        return appointmentList.stream().map(appointmentMapper::toAppointmentListDoctorViewDTO).toList();
     }
 
-    public List<PredictionResultDTO> viewPatientPredictionsList(Long patientId, String doctorEmail) {
+    public List<PatientMedicalTestsViewDTO> getPatientMedicalTestsViewDTOS(Long appointmentId, String doctorEmail) {
 
-        Patient patient = isPatientBelongToDoctor(patientId, doctorEmail);
-        if (patient == null)
-            throw new RuntimeException("Doctor with email " + doctorEmail + " Does not have this patient in his/her list");
+        Appointment appointment = isAppointmentBelongToDoctor(appointmentId, doctorEmail);
+        if (appointment == null)
+            throw new RuntimeException("Doctor with email " + doctorEmail + " Does not have this appointment in his/her list");
 
-       List<Prediction> predictions = patient.getPredictionList();
+       List<MedicalTest> medicalTests = appointment.getPatient().getMedicalTestList();
 
         //  Map to DTO list
-        return predictions.stream()
-                .map(predictionMapper::toDTO)
+        return medicalTests.stream()
+                .map(medicalTestsMapper::toDTO)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    protected Patient isPatientBelongToDoctor(Long id, String doctorEmail) {
+    protected Appointment isAppointmentBelongToDoctor(Long id, String doctorEmail) {
         Doctor doctor = doctorRepository.findByEmail(doctorEmail)
                 .orElseThrow(() ->
                         new UserNotFoundException("Doctor not found"));
-        for (Patient patient : doctor.getPatientList()) {
-            if (patient.getId().equals(id))
-                return patient;
+        for (Appointment appointment : doctor.getAppointments()) {
+            if (appointment.getId().equals(id))
+                return appointment;
         }
         return null;
     }
@@ -96,10 +89,10 @@ public class DoctorService {
         prescriptionRepository.save(prescription);
     }
 
-    public PrescriptionDTO initializePrescription(Long patientId, String doctorEmail){
-        Patient patient = isPatientBelongToDoctor(patientId, doctorEmail);
-        if (patient == null) {
-            throw new RuntimeException("Doctor with email " + doctorEmail + " Does not have this patient in his/her list");
+    public PrescriptionDTO initializePrescription(Long appointmentId, String doctorEmail){
+        Appointment appointment = isAppointmentBelongToDoctor(appointmentId, doctorEmail);
+        if (appointment == null) {
+            throw new RuntimeException("Doctor with email " + doctorEmail + " Does not have this appointment in his/her list");
         }
 
         Doctor doctor = doctorRepository.findByEmail(doctorEmail)
@@ -107,7 +100,7 @@ public class DoctorService {
                 new UserNotFoundException("Doctor not found"));
 
         PrescriptionDTO prescriptiondto = new PrescriptionDTO();
-        prescriptiondto.setPatientName(patient.getName());
+        prescriptiondto.setPatientName(appointment.getPatient().getName());
         prescriptiondto.setDoctorName(doctor.getName());
         prescriptiondto.setPrescriptionDate(LocalDateTime.now());
         return prescriptiondto;

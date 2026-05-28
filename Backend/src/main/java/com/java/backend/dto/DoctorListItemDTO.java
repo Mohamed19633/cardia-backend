@@ -3,6 +3,10 @@ package com.java.backend.dto;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
+import java.time.DayOfWeek;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
 @Data
 
 public class DoctorListItemDTO {
@@ -40,14 +44,25 @@ public class DoctorListItemDTO {
     @Size(min = 3, message = "At least 3 characters in Specialization")
     private String specialization;
 
-    @NotNull(message = "Specialization can not be null")
-    private String workTime;
+    @NotNull(message = "From day cannot be null")
+    private DayOfWeek fromDay;
+
+    @NotNull(message = "To day cannot be null")
+    private DayOfWeek toDay;
+
+    @NotNull(message = "From time cannot be null")
+    private LocalTime fromTime;
+
+    @NotNull(message = "To time cannot be null")
+    private LocalTime toTime;
+
 
     public DoctorListItemDTO(){
 
     }
 
-    public DoctorListItemDTO(String name, String contactNumber, String streetAddress, String city, String state, String country, String specialization, String workTime){
+    public DoctorListItemDTO(Long id, String name, String contactNumber, String streetAddress, String city, String state, String country, String specialization, DayOfWeek fromDay, DayOfWeek toDay, LocalTime fromTime, LocalTime toTime){
+        this.id = id;
         this.name = name;
         this.contactNumber = contactNumber;
         this.streetAddress = streetAddress;
@@ -55,6 +70,9 @@ public class DoctorListItemDTO {
         this.state = state;
         this.country = country;
         this.specialization = specialization;
-        this.workTime = workTime;
+        this.fromDay = fromDay;
+        this.toDay = toDay;
+        this.fromTime = fromTime;
+        this.toTime = toTime;
     }
 }
