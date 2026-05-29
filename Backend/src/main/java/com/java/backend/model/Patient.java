@@ -5,12 +5,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import lombok.Data;
+import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Data
+@ToString(exclude = {"appointments", "prescriptions", "medicalTestList"})
 public class Patient extends Person{
 
 
@@ -21,6 +23,6 @@ public class Patient extends Person{
     private List<Prescription> prescriptions = new ArrayList<>();
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.PERSIST)
-    private List<MedicalTest> medicalTestList = new ArrayList<>();// one to many - pi
+    private List<MedicalTest> medicalTestList = new ArrayList<>();
 
 }

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import lombok.ToString;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @Data
 @Entity
+@ToString(exclude = {"appointments"})
 public class Doctor extends Person{
 
     @NotNull(message = "Specialization can not be null")

@@ -1,6 +1,8 @@
 package com.java.backend.controller;
 
 import com.java.backend.dto.LoginRequestDTO;
+import com.java.backend.service.AdminService;
+import com.java.backend.service.AppointmentService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -27,9 +29,13 @@ public class AuthenticationController {
 
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository(); // Use this for sessions
+    private final AdminService adminService;
+    private final AppointmentService appointmentService;
 
-    public AuthenticationController(AuthenticationManager authenticationManager){
+    public AuthenticationController(AuthenticationManager authenticationManager, AdminService adminService, AppointmentService appointmentService){
         this.authenticationManager= authenticationManager;
+        this.adminService = adminService;
+        this.appointmentService = appointmentService;
     }
 
     @PostMapping("/login")
@@ -46,6 +52,9 @@ public class AuthenticationController {
 
         // 3. IMPORTANT: Explicitly save the context to the session repository
         securityContextRepository.saveContext(context, httpRequest, httpResponse);
+
+        // update appointments
+        appointmentService.updateAppointments();
 
         return ResponseEntity.ok(Map.of("message", "Login Successfully!. Welcome "+loginRequestDTO.email()));
     }

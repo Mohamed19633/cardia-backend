@@ -85,21 +85,6 @@ public class PatientMapper {
             dto.setCountry(patient.getAddress().getCountry());
         }
 
-        if(patient.getMedicalTestList() != null)
-            dto.setMedicalTests(patient.getMedicalTestList().stream().map(medicalTestsMapper::toDTO).toList());
-
-
-        if (patient.getPrescriptions() != null) {
-            dto.setPrescriptions(patient.getPrescriptions().stream()
-                    .map(prescriptionMapper::toDTO)
-                    .toList());
-        }
-
-
-        if(patient.getAppointments() != null){
-            dto.setAppointments(patient.getAppointments().stream().map(appointmentMapper::toAppointmentListPatientViewDTO).toList());
-        }
-
         return dto;
     }
 }

@@ -1,23 +1,28 @@
 package com.java.backend.service;
 
+import com.java.backend.dto.AppointmentListAdminViewDTO;
 import com.java.backend.dto.DoctorDTO;
 import com.java.backend.dto.PatientMedicalTestsViewDTO;
 import com.java.backend.dto.PersonDTO;
 import com.java.backend.exception.EmailAlreadyUsedException;
 import com.java.backend.exception.UserNotFoundException;
+import com.java.backend.mapper.AppointmentMapper;
 import com.java.backend.mapper.DoctorMapper;
 import com.java.backend.mapper.MedicalTestsMapper;
 import com.java.backend.mapper.PersonMapper;
+import com.java.backend.model.Appointment;
 import com.java.backend.model.Doctor;
 import com.java.backend.model.MedicalTest;
 import com.java.backend.model.Person;
-import com.java.backend.repository.DoctorRepository;
-import com.java.backend.repository.PatientRepository;
-import com.java.backend.repository.PersonRepository;
-import com.java.backend.repository.MedicalTestRepository;
+import com.java.backend.repository.*;
+import com.java.backend.utilities.AppointmentStatus;
+import org.springframework.data.querydsl.ListQuerydslPredicateExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Year;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,8 +38,10 @@ public class AdminService {
     private final DoctorMapper doctorMapper;
     private final PersonMapper personMapper;
     private MedicalTestsMapper medicalTestsMapper;
+    private AppointmentRepository appointmentRepository;
+    private AppointmentMapper appointmentMapper;
 
-    public AdminService(PersonRepository personRepository,MedicalTestsMapper medicalTestsMapper, MedicalTestRepository medicalTestRepository, DoctorRepository doctorRepository, PatientRepository patientRepository, DoctorMapper doctorMapper, PersonMapper personMapper) {
+    public AdminService(PersonRepository personRepository,AppointmentMapper appointmentMapper, AppointmentRepository appointmentRepository, MedicalTestsMapper medicalTestsMapper, MedicalTestRepository medicalTestRepository, DoctorRepository doctorRepository, PatientRepository patientRepository, DoctorMapper doctorMapper, PersonMapper personMapper) {
         this.personRepository = personRepository;
         this.medicalTestRepository = medicalTestRepository;
         this.doctorRepository = doctorRepository;
@@ -42,6 +49,8 @@ public class AdminService {
         this.doctorMapper = doctorMapper;
         this.personMapper = personMapper;
         this.medicalTestsMapper = medicalTestsMapper;
+        this.appointmentRepository = appointmentRepository;
+        this.appointmentMapper = appointmentMapper;
     }
 
     public List<PersonDTO> getAllUsersExceptAdmins(String email) {
@@ -57,7 +66,6 @@ public class AdminService {
                 .orElseThrow(() -> new UserNotFoundException("No users with id: " + id));
     }
 
-    @Transactional
     public void deleteUser(Long id) {
         Optional<Person> person = personRepository.findById(id);
 
@@ -87,5 +95,15 @@ public class AdminService {
         map.put("message","Registered Successfully");
         map.put("role",doctor.getRole().getName());
         return map;
+    }
+
+    public List<AppointmentListAdminViewDTO> getAllAppointment() {
+        List<AppointmentListAdminViewDTO> appointmentListAdminViewDTOS =
+                appointmentRepository.findAll().stream().map(appointmentMapper:: toAppointmentListAdminViewDTO).toList();
+        return appointmentListAdminViewDTOS;
+    }
+
+    public void deleteAppointmentById(Long appointmentId) {
+        appointmentRepository.deleteById(appointmentId);
     }
 }
