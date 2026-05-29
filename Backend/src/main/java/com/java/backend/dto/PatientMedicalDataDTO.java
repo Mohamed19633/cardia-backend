@@ -37,7 +37,7 @@ public class PatientMedicalDataDTO {
 
     @NotNull(message = "Maximum heart rate (thalach) is required")
     @Min(50) @Max(250)
-    private Integer thalach; // maximum heart rate achieved
+    private Integer thalch; // maximum heart rate achieved
 
     @NotNull(message = "Exercise induced angina (exang) is required")
     @Min(0) @Max(1)

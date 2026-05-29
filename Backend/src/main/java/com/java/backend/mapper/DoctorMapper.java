@@ -18,7 +18,7 @@ public class DoctorMapper {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public DoctorListItemDTO toDoctorDTO(Doctor doctor) {
+    public DoctorListItemDTO toDoctorListItemDTO(Doctor doctor) {
         if (doctor == null) {
             return null;
         }

@@ -90,8 +90,9 @@ public class PatientMapper {
         for(Prediction prediction : patient.getPredictionList()){
             PredictionResultDTO predictionResultDTO = new PredictionResultDTO();
             predictionResultDTO.setDateAndTime(prediction.getCreatedAt());
-            predictionResultDTO.setRiskScore(prediction.getRiskScore());
-            predictionResultDTO.setResult(prediction.getPredictionResult());
+            predictionResultDTO.setDiagnosis(prediction.getDiagnosis());
+            predictionResultDTO.setRiskProbability(prediction.getRiskProbability().toString()+"%");
+            predictionResultDTO.setBelongsTo(patient.getEmail());
             predictionResultDTOList.add(predictionResultDTO);
         }
         dto.setPredictions(predictionResultDTOList);

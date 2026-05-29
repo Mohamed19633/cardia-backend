@@ -4,6 +4,7 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 
 @Data
+
 public class DoctorListItemDTO {
 
     private Long id;
@@ -37,8 +38,23 @@ public class DoctorListItemDTO {
 
     @NotNull(message = "Specialization can not be null")
     @Size(min = 3, message = "At least 3 characters in Specialization")
-    private String Specialization;
+    private String specialization;
 
     @NotNull(message = "Specialization can not be null")
     private String workTime;
+
+    public DoctorListItemDTO(){
+
+    }
+
+    public DoctorListItemDTO(String name, String contactNumber, String streetAddress, String city, String state, String country, String specialization, String workTime){
+        this.name = name;
+        this.contactNumber = contactNumber;
+        this.streetAddress = streetAddress;
+        this.city = city;
+        this.state = state;
+        this.country = country;
+        this.specialization = specialization;
+        this.workTime = workTime;
+    }
 }

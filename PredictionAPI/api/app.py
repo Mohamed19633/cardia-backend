@@ -32,6 +32,9 @@ def index():
     """Service health check endpoint."""
     return "Heart Disease Prediction API Service is Active."
 
+# Define the exact feature order the model was trained on
+FEATURE_ORDER = ['age', 'sex', 'cp', 'trestbps', 'chol', 'fbs', 'restecg', 'thalch', 'exang', 'oldpeak', 'slope', 'ca', 'thal']
+
 @app.route('/predict', methods=['POST'])
 def predict():
     """
@@ -46,6 +49,7 @@ def predict():
 
         # 2. Construct DataFrame from input data
         input_df = pd.DataFrame([request_data])
+        input_df = input_df[FEATURE_ORDER]  #enforce correct column order here
 
         # 3. Categorical Encoding
         # Transform string labels to numerical values using stored LabelEncoders
@@ -72,8 +76,8 @@ def predict():
         return jsonify({
             "status": "success",
             "prediction": int(prediction),
-            "diagnosis": "Heart Disease Detected" if prediction == 1 else "Healthy",
-            "risk_probability": f"{round(probability * 100, 2)}%",
+            "diagnosis": "Potential Heart Disease Risk Detected" if prediction == 1 else "Healthy",
+            "riskProbability": f"{round(probability * 100, 2)}%",
             "model_metadata": {
                 "target_recall": "91%",
                 "operating_threshold": OPTIMIZED_THRESHOLD
