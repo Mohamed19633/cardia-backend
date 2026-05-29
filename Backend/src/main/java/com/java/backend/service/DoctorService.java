@@ -71,7 +71,7 @@ public class DoctorService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
+
     protected Appointment isAppointmentBelongToDoctor(Long id, String doctorEmail) {
         Doctor doctor = doctorRepository.findByEmail(doctorEmail)
                 .orElseThrow(() ->

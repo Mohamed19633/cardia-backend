@@ -1,14 +1,14 @@
 package com.java.backend.service;
 
-import com.java.backend.dto.DoctorListItemDTO;
-import com.java.backend.dto.PatientDTO;
-import com.java.backend.dto.PatientMedicalDataDTO;
-import com.java.backend.dto.PredictionResultDTO;
+import com.java.backend.dto.*;
 import com.java.backend.exception.DoctorNotAvailableException;
 import com.java.backend.exception.EmailAlreadyUsedException;
+import com.java.backend.exception.NoMedicalTestException;
 import com.java.backend.exception.UserNotFoundException;
+import com.java.backend.mapper.AppointmentMapper;
 import com.java.backend.mapper.MedicalTestsMapper;
 import com.java.backend.mapper.PatientMapper;
+import com.java.backend.mapper.PrescriptionMapper;
 import com.java.backend.model.*;
 import com.java.backend.repository.*;
 import com.java.backend.utilities.AppointmentStatus;
@@ -35,8 +35,10 @@ public class PatientService {
     private final MedicalTestsMapper medicalTestsMapper;
     private WebClient predictionWebClient;
     private AppointmentRepository appointmentRepository;
+    private AppointmentMapper appointmentMapper;
+    private final PrescriptionMapper prescriptionMapper;
 
-    public PatientService(PatientRepository patientRepository, AppointmentRepository appointmentRepository, WebClient predictionWebClient, PatientMapper patientMapper, DoctorRepository doctorRepository, MedicalTestRepository medicalTestRepository, PersonRepository personRepository, MedicalTestsMapper medicalTestsMapper) {
+    public PatientService(PatientRepository patientRepository,AppointmentMapper appointmentMapper, AppointmentRepository appointmentRepository, WebClient predictionWebClient, PatientMapper patientMapper, DoctorRepository doctorRepository, MedicalTestRepository medicalTestRepository, PersonRepository personRepository, MedicalTestsMapper medicalTestsMapper, PrescriptionMapper prescriptionMapper) {
         this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
         this.patientMapper = patientMapper;
@@ -45,6 +47,8 @@ public class PatientService {
         this.personRepository = personRepository;
         this.appointmentRepository = appointmentRepository;
         this.medicalTestsMapper = medicalTestsMapper;
+        this.appointmentMapper = appointmentMapper;
+        this.prescriptionMapper = prescriptionMapper;
     }
 
     public Patient getPatientByEmail(String email) {
@@ -76,6 +80,10 @@ public class PatientService {
     public Appointment bookAppointment(String patientEmail, Long doctorId, ConnectivityType connectivityType, LocalDateTime appointmentTime) {
         Patient patient = patientRepository.findByEmail(patientEmail).orElseThrow(() -> new UserNotFoundException("No such Patient with this Email: " + patientEmail));
 
+        if(patient.getMedicalTestList().isEmpty())
+            throw new NoMedicalTestException("Patient must have at least one medical test to book an appointment.");
+
+
         Doctor doctor = doctorRepository.findById(doctorId).orElseThrow(() -> new UserNotFoundException("No Doctors with id: " + doctorId));
         boolean isDoctorAvailable = isDoctorAvailable(doctor, appointmentTime);
         if (!isDoctorAvailable)
@@ -88,7 +96,7 @@ public class PatientService {
         appointment.setStatus(AppointmentStatus.CONFIRMED);
         appointment.setTime(appointmentTime);
         if (connectivityType.equals(ConnectivityType.ONLINE)) {
-            String roomName = doctor.getName() + "-patient." + patient.getName() + "-" + UUID.randomUUID();
+            String roomName = "Dr."+doctor.getUserName() + "-patient." + patient.getUserName() + "-" + UUID.randomUUID();
             String meetingLink =
                     "https://meet.jit.si/" + roomName;
             appointment.setMeetingLink(meetingLink);
@@ -135,7 +143,7 @@ public class PatientService {
 
     private void customizeResult(PredictionResultDTO predictionResultDTO, PatientMedicalDataDTO patientMedicalDataDTO, UserDetails userDetails) {
         String diagnosis = predictionResultDTO.getDiagnosis(), recommendationMessage = "Enjoy your day!", riskCategory = "";
-        List<DoctorListItemDTO> recommendedDoctors = new ArrayList<>();
+        Set<DoctorListItemDTO> recommendedDoctors = new LinkedHashSet<>();
         Patient patient = patientRepository.findByEmail(userDetails.getUsername()).orElseThrow(() -> new UserNotFoundException("Patient not found"));
         if (diagnosis != null && !diagnosis.equals("Healthy")) {
             recommendationMessage = "Please consult a healthcare professional.";
@@ -155,7 +163,7 @@ public class PatientService {
 
     }
 
-    private List<DoctorListItemDTO> getRecommendedDoctor(String category, Address address) {
+    private Set<DoctorListItemDTO> getRecommendedDoctor(String category, Address address) {
         String doctorSpecialization = "";
         switch (category) {
             case "Exercise-Induced Ischemic Risk Pattern":
@@ -173,13 +181,13 @@ public class PatientService {
             default:
                 doctorSpecialization = "General Cardiologist";
         }
-        List<DoctorListItemDTO> doctorListItemDTOList = getSpecializedDoctorInArea(doctorSpecialization, address);
+        Set<DoctorListItemDTO> doctorListItemDTOList = getSpecializedDoctorInArea(doctorSpecialization, address);
         return doctorListItemDTOList;
     }
 
-    private List<DoctorListItemDTO> getSpecializedDoctorInArea(String specialization, Address address) {
-        List<DoctorListItemDTO> doctorListItemDTOList = new ArrayList<>();
-        doctorListItemDTOList = personRepository.getSpecializedDoctorsBasedonState(specialization, address.getState());
+    private Set<DoctorListItemDTO> getSpecializedDoctorInArea(String specialization, Address address) {
+        Set<DoctorListItemDTO> doctorListItemDTOList = new LinkedHashSet<>();
+        doctorListItemDTOList.addAll(personRepository.getSpecializedDoctorsBasedonState(specialization, address.getState()));
         doctorListItemDTOList.addAll(personRepository.getSpecializedDoctorsBasedonCity(specialization, address.getCity()));
         if (doctorListItemDTOList.isEmpty())
             doctorListItemDTOList.addAll(personRepository.getSpecializedDoctorsBasedonCountry(specialization, address.getCountry()));
@@ -209,5 +217,35 @@ public class PatientService {
             return "Severe Cardiovascular Risk Pattern";
 
         return "General Cardiac Risk Pattern";
+    }
+
+    public List<AppointmentListPatientViewDTO> getPatientAppointment(String email) {
+        Patient patient = patientRepository.findByEmail(email).orElseThrow(()-> new UserNotFoundException("Patient with email: "+email+" not found"));
+        List<Appointment> appointmentListPatientViewDTOS = Optional.ofNullable(patient.getAppointments()).orElse(new ArrayList<>());
+        List<AppointmentListPatientViewDTO> DTOS2 = new ArrayList<>();
+        for(Appointment appointment : appointmentListPatientViewDTOS){
+            AppointmentListPatientViewDTO dto = appointmentMapper.toAppointmentListPatientViewDTO(appointment);
+            DTOS2.add(dto);
+        }
+        return DTOS2;
+    }
+
+    public List<PatientMedicalTestsViewDTO> getPatientMedicalTests(String email) {
+        Patient patient = patientRepository.findByEmail(email).orElseThrow(()-> new UserNotFoundException("Patient with email: "+email+" not found"));
+        List<PatientMedicalTestsViewDTO> patientMedicalTestsViewDTOS = Optional.ofNullable(patient.getMedicalTestList()).orElse(new ArrayList<>()).stream().map(medicalTestsMapper :: toDTO).toList();
+        return patientMedicalTestsViewDTOS;
+    }
+
+    public List<PrescriptionDTO> getPatientPrescriptions(String email) {
+        Patient patient = patientRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("Patient with email: " + email + " not found"));
+        return Optional.ofNullable(patient.getPrescriptions()).orElse(new ArrayList<>()).stream().map(prescriptionMapper::toDTO).toList();
+    }
+
+    public void cancelAppointment(Long appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new UserNotFoundException("No appointment with this id "+ appointmentId));
+        if(appointment.getStatus().equals(AppointmentStatus.CONFIRMED)){
+            appointment.setStatus(AppointmentStatus.CANCELLED);
+            appointmentRepository.save(appointment);
+        }
     }
 }

@@ -55,10 +55,4 @@ public class PatientDTO {
     @NotBlank(message = "Country is required")
     private String country;
 
-    private List<PrescriptionDTO> prescriptions;
-
-   private List<PatientMedicalTestsViewDTO> medicalTests;
-
-   private List<AppointmentListPatientViewDTO> appointments;
-
 }

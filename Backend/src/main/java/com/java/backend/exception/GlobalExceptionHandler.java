@@ -58,6 +58,14 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(NoMedicalTestException.class)
+    public ResponseEntity<Map<String, Object>> handleNoMedicalTestException(NoMedicalTestException ex){
+        Map<String , Object> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        error.put("status", HttpStatus.UNPROCESSABLE_CONTENT.value());
+        return new ResponseEntity<>(error, HttpStatus.UNPROCESSABLE_CONTENT);
+    }
+
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGlobalException(Exception ex){

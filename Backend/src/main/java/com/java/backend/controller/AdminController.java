@@ -1,9 +1,12 @@
 package com.java.backend.controller;
 
+import com.java.backend.dto.AppointmentListAdminViewDTO;
 import com.java.backend.dto.DoctorDTO;
 import com.java.backend.dto.PatientMedicalTestsViewDTO;
 import com.java.backend.dto.PersonDTO;
+import com.java.backend.mapper.AppointmentMapper;
 import com.java.backend.model.Patient;
+import com.java.backend.repository.AppointmentRepository;
 import com.java.backend.service.AdminService;
 import com.java.backend.service.MedicalTestService;
 import jakarta.validation.Valid;
@@ -22,10 +25,12 @@ public class AdminController {
 
     private final MedicalTestService medicalTestService;
     private final AdminService adminService;
+    private AppointmentRepository appointmentRepository;
 
-    public AdminController(AdminService adminService, MedicalTestService medicalTestService){
+    public AdminController(AdminService adminService,AppointmentRepository appointmentRepository, MedicalTestService medicalTestService){
         this.adminService = adminService;
         this.medicalTestService = medicalTestService;
+        this.appointmentRepository = appointmentRepository;
     }
 
     @GetMapping("/users")
@@ -65,6 +70,17 @@ public class AdminController {
     public ResponseEntity<String> deleteMedicalTest(@PathVariable Long id){
         medicalTestService.deleteById(id);
         return ResponseEntity.ok("Medical test with id: "+id+" has been deleted.");
+    }
+
+    @GetMapping("/appointments")
+    public ResponseEntity<List<AppointmentListAdminViewDTO>> getAllAppointments(){
+        return ResponseEntity.ok(adminService.getAllAppointment());
+    }
+    
+    @DeleteMapping("/appointment/{appointmentId}")
+    public ResponseEntity<String> deleteAppointment(@PathVariable Long appointmentId){
+        adminService.deleteAppointmentById(appointmentId);
+        return ResponseEntity.ok("Appointment with id: "+appointmentId+" has been deleted.");
     }
 
     @PostMapping("/doctors")
