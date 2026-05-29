@@ -54,6 +54,9 @@ public class AuthenticationController {
 
     @GetMapping("/logout")
     public ResponseEntity<Map<String,String> >logout(HttpServletRequest request, @AuthenticationPrincipal UserDetails userDetails){
+        if(userDetails == null)
+            return ResponseEntity.ok(Map.of("message", "Error: No Logged in users to Logged out!!"));
+
 
         String email = userDetails.getUsername();
 
