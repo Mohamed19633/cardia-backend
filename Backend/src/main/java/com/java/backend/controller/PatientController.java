@@ -55,6 +55,7 @@ public class PatientController {
         return ResponseEntity.ok(patientDTO);
     }
 
+
     @GetMapping("/me/appointments")
     public ResponseEntity<List<AppointmentListPatientViewDTO>> viewAppointments(@AuthenticationPrincipal UserDetails userDetails) {
         String email = userDetails.getUsername();
