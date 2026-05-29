@@ -5,16 +5,20 @@ import com.java.backend.dto.PatientDTO;
 import com.java.backend.dto.PatientMedicalDataDTO;
 import com.java.backend.dto.PredictionResultDTO;
 import com.java.backend.mapper.PatientMapper;
+import com.java.backend.model.Appointment;
 import com.java.backend.model.Patient;
 import com.java.backend.service.DoctorService;
 import com.java.backend.service.PatientService;
+import com.java.backend.utilities.ConnectivityType;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -82,10 +86,11 @@ public class PatientController {
 
 
     @PostMapping("/book-appointment/{doctorId}")
-    public ResponseEntity<String> bookAppointment(@AuthenticationPrincipal UserDetails userDetails, 
-                                                @PathVariable Long doctorId){
+    public ResponseEntity<String> bookAppointment(@AuthenticationPrincipal UserDetails userDetails,
+                                                  @PathVariable Long doctorId, @RequestParam String connectivityType, @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime time){
         String patientEmail = userDetails.getUsername();
-        patientService.bookAppointment(patientEmail, doctorId);
-        return ResponseEntity.ok("Booked successfully");
+        ConnectivityType connectivity = connectivityType.equals("ONLINE")? ConnectivityType.ONLINE : ConnectivityType.OFFLINE;
+        Appointment appointment = patientService.bookAppointment(patientEmail, doctorId,connectivity, time);
+        return ResponseEntity.ok("Appointment confirmed successfully\n"+appointment.getMeetingLink());
     }
 }

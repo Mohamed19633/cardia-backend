@@ -4,18 +4,15 @@ import com.java.backend.dto.DoctorListItemDTO;
 import com.java.backend.dto.PatientDTO;
 import com.java.backend.dto.PatientMedicalDataDTO;
 import com.java.backend.dto.PredictionResultDTO;
+import com.java.backend.exception.DoctorNotAvailableException;
 import com.java.backend.exception.EmailAlreadyUsedException;
 import com.java.backend.exception.UserNotFoundException;
+import com.java.backend.mapper.MedicalTestsMapper;
 import com.java.backend.mapper.PatientMapper;
-import com.java.backend.mapper.PredictionMapper;
-import com.java.backend.model.Address;
-import com.java.backend.model.Doctor;
-import com.java.backend.model.Patient;
-import com.java.backend.model.Prediction;
-import com.java.backend.repository.DoctorRepository;
-import com.java.backend.repository.PatientRepository;
-import com.java.backend.repository.PersonRepository;
-import com.java.backend.repository.PredictionRepository;
+import com.java.backend.model.*;
+import com.java.backend.repository.*;
+import com.java.backend.utilities.AppointmentStatus;
+import com.java.backend.utilities.ConnectivityType;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -33,75 +30,102 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
     private final PatientMapper patientMapper;
-    private final PredictionRepository predictionRepository;
+    private final MedicalTestRepository medicalTestRepository;
     private final PersonRepository personRepository;
+    private final MedicalTestsMapper medicalTestsMapper;
     private WebClient predictionWebClient;
-    private PredictionMapper predictionMapper;
+    private AppointmentRepository appointmentRepository;
 
-    public PatientService(PatientRepository patientRepository, PredictionMapper predictionMapper, WebClient predictionWebClient, PatientMapper patientMapper, DoctorRepository doctorRepository, PredictionRepository predictionRepository, PersonRepository personRepository){
+    public PatientService(PatientRepository patientRepository, AppointmentRepository appointmentRepository, WebClient predictionWebClient, PatientMapper patientMapper, DoctorRepository doctorRepository, MedicalTestRepository medicalTestRepository, PersonRepository personRepository, MedicalTestsMapper medicalTestsMapper) {
         this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
         this.patientMapper = patientMapper;
         this.predictionWebClient = predictionWebClient;
-        this.predictionMapper = predictionMapper;
-        this.predictionRepository = predictionRepository;
+        this.medicalTestRepository = medicalTestRepository;
         this.personRepository = personRepository;
+        this.appointmentRepository = appointmentRepository;
+        this.medicalTestsMapper = medicalTestsMapper;
     }
 
     public Patient getPatientByEmail(String email) {
         Optional<Patient> patient = patientRepository.findByEmail(email);
-        if(patient.isEmpty())
-            throw new UserNotFoundException("User With Email = "+email+" Not Found");
+        if (patient.isEmpty())
+            throw new UserNotFoundException("User With Email = " + email + " Not Found");
         return patient.get();
     }
 
-    public Map<String,String> registerNewPatient(@Valid  PatientDTO patientDTO){
-        if(patientRepository.existsByEmail(patientDTO.getEmail())){
+    public Map<String, String> registerNewPatient(@Valid PatientDTO patientDTO) {
+        if (patientRepository.existsByEmail(patientDTO.getEmail())) {
             throw new EmailAlreadyUsedException("Email already in use!");
         }
-        Patient patient = patientRepository.save( patientMapper.toPatientEntity(patientDTO,"SAVE",null));
+        Patient patient = patientRepository.save(patientMapper.toPatientEntity(patientDTO, "SAVE", null));
 
         Map<String, String> map = new HashMap<>();
-        map.put("message","Registered Successfully");
-        map.put("role",patient.getRole().getName());
+        map.put("message", "Registered Successfully");
+        map.put("role", patient.getRole().getName());
         return map;
     }
 
     public String updatePatient(@Valid PatientDTO patientDTO, Patient existingPatient) {
-        Patient patient  = patientMapper.toPatientEntity(patientDTO,"EDIT",existingPatient);
+        Patient patient = patientMapper.toPatientEntity(patientDTO, "EDIT", existingPatient);
 
         patientRepository.save(patient);// return will never be null.
         return "Patient Saved successfully.";
     }
 
-    public void bookAppointment(String patientEmail, Long doctorId) {
-        Optional<Patient> patient = patientRepository.findByEmail(patientEmail);
-        if(patient.isEmpty()){
-            throw new UserNotFoundException("No such Patient with this Email: "+patientEmail);
+    public Appointment bookAppointment(String patientEmail, Long doctorId, ConnectivityType connectivityType, LocalDateTime appointmentTime) {
+        Patient patient = patientRepository.findByEmail(patientEmail).orElseThrow(() -> new UserNotFoundException("No such Patient with this Email: " + patientEmail));
+
+        Doctor doctor = doctorRepository.findById(doctorId).orElseThrow(() -> new UserNotFoundException("No Doctors with id: " + doctorId));
+        boolean isDoctorAvailable = isDoctorAvailable(doctor, appointmentTime);
+        if (!isDoctorAvailable)
+            throw new DoctorNotAvailableException("Doctor is not available at this time");
+
+        Appointment appointment = new Appointment();
+        appointment.setPatient(patient);
+        appointment.setDoctor(doctor);
+        appointment.setConnectivityType(connectivityType);
+        appointment.setStatus(AppointmentStatus.CONFIRMED);
+        appointment.setTime(appointmentTime);
+        if (connectivityType.equals(ConnectivityType.ONLINE)) {
+            String roomName = doctor.getName() + "-patient." + patient.getName() + "-" + UUID.randomUUID();
+            String meetingLink =
+                    "https://meet.jit.si/" + roomName;
+            appointment.setMeetingLink(meetingLink);
         }
+        appointmentRepository.save(appointment);
+        return appointment;
+    }
 
-        Optional<Doctor> doctor = doctorRepository.findById(doctorId);
-        if(doctor.isEmpty())
-            throw new UserNotFoundException("No Doctors with id: "+ doctorId);
-
-        doctor.get().getPatientList().add(patient.get());
-        patient.get().setDoctor(doctor.get());
-        patient.get().setBookingDateAndTime(LocalDateTime.now());
-        doctorRepository.save(doctor.get());
-        patientRepository.save(patient.get());
+    private boolean isDoctorAvailable(Doctor doctor, LocalDateTime appointmentTime) {
+        int fromDay = doctor.getFromDay().getValue(), toDay = doctor.getToDay().getValue(), appointDay = appointmentTime.getDayOfWeek().getValue();
+        if (fromDay > toDay && (appointDay <= toDay ||
+                appointDay >= fromDay)) {
+            if (appointmentTime.getHour() >= doctor.getFromTime().getHour() &&
+                    appointmentTime.getHour() <= doctor.getToTime().getHour()) {
+                return true;
+            }
+        } else if (fromDay < toDay && appointDay <= toDay &&
+                appointDay >= fromDay) {
+            if (appointmentTime.getHour() >= doctor.getFromTime().getHour() &&
+                    appointmentTime.getHour() <= doctor.getToTime().getHour()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public PredictionResultDTO predictHeartDisease(PatientMedicalDataDTO patientMedicalDataDTO, UserDetails userDetails) {
-       PredictionResultDTO predictionResultDTO =   predictionWebClient.post()
+        PredictionResultDTO predictionResultDTO = predictionWebClient.post()
                 .uri("/predict")
                 .bodyValue(patientMedicalDataDTO)
                 .retrieve().onStatus(HttpStatusCode::isError, response ->
-                       response.bodyToMono(String.class)
-                               .flatMap(errorBody -> {
-                                   System.err.println("Python service error: " + errorBody);
-                                   return Mono.error(new RuntimeException("Prediction service failed: " + errorBody));
-                               })
-               )
+                        response.bodyToMono(String.class)
+                                .flatMap(errorBody -> {
+                                    System.err.println("Python service error: " + errorBody);
+                                    return Mono.error(new RuntimeException("Prediction service failed: " + errorBody));
+                                })
+                )
                 .bodyToMono(PredictionResultDTO.class)
                 .block();
 
@@ -110,12 +134,12 @@ public class PatientService {
     }
 
     private void customizeResult(PredictionResultDTO predictionResultDTO, PatientMedicalDataDTO patientMedicalDataDTO, UserDetails userDetails) {
-        String diagnosis = predictionResultDTO.getDiagnosis(), recommendationMessage = "Enjoy your day!",riskCategory = "";
+        String diagnosis = predictionResultDTO.getDiagnosis(), recommendationMessage = "Enjoy your day!", riskCategory = "";
         List<DoctorListItemDTO> recommendedDoctors = new ArrayList<>();
-        if(diagnosis != null && !diagnosis.equals("Healthy")) {
+        Patient patient = patientRepository.findByEmail(userDetails.getUsername()).orElseThrow(() -> new UserNotFoundException("Patient not found"));
+        if (diagnosis != null && !diagnosis.equals("Healthy")) {
             recommendationMessage = "Please consult a healthcare professional.";
             riskCategory = classifyRiskCategory(patientMedicalDataDTO);
-            Patient patient = patientRepository.findByEmail(userDetails.getUsername()).orElseThrow(() -> new UserNotFoundException("Patient not found"));
             recommendedDoctors = getRecommendedDoctor(riskCategory, patient.getAddress());
         }
 
@@ -126,30 +150,30 @@ public class PatientService {
         predictionResultDTO.setDateAndTime(LocalDateTime.now());
         predictionResultDTO.setBelongsTo(userDetails.getUsername());
 
-        Prediction prediction = predictionMapper.toEntity(predictionResultDTO);
-        predictionRepository.save(prediction);
+        MedicalTest medicalTest = medicalTestsMapper.toEntity(predictionResultDTO, patientMedicalDataDTO, patient);
+        medicalTestRepository.save(medicalTest);
 
     }
 
     private List<DoctorListItemDTO> getRecommendedDoctor(String category, Address address) {
-        String doctorSpecialization =  "";
-        switch(category) {
+        String doctorSpecialization = "";
+        switch (category) {
             case "Exercise-Induced Ischemic Risk Pattern":
                 doctorSpecialization = "Sports Cardiologist";
                 break;
 
             case "ECG Abnormality Pattern":
-                doctorSpecialization =  "Cardiac Electrophysiologist";
+                doctorSpecialization = "Cardiac Electrophysiologist";
                 break;
 
             case "Severe Cardiovascular Risk Pattern":
-                doctorSpecialization =  "Cardiac Surgery Unit";
+                doctorSpecialization = "Cardiac Surgery Unit";
                 break;
 
             default:
-                doctorSpecialization =  "General Cardiologist";
+                doctorSpecialization = "General Cardiologist";
         }
-        List< DoctorListItemDTO> doctorListItemDTOList = getSpecializedDoctorInArea(doctorSpecialization, address);
+        List<DoctorListItemDTO> doctorListItemDTOList = getSpecializedDoctorInArea(doctorSpecialization, address);
         return doctorListItemDTOList;
     }
 
@@ -157,33 +181,33 @@ public class PatientService {
         List<DoctorListItemDTO> doctorListItemDTOList = new ArrayList<>();
         doctorListItemDTOList = personRepository.getSpecializedDoctorsBasedonState(specialization, address.getState());
         doctorListItemDTOList.addAll(personRepository.getSpecializedDoctorsBasedonCity(specialization, address.getCity()));
-        if(doctorListItemDTOList.isEmpty())
+        if (doctorListItemDTOList.isEmpty())
             doctorListItemDTOList.addAll(personRepository.getSpecializedDoctorsBasedonCountry(specialization, address.getCountry()));
         return doctorListItemDTOList;
     }
 
     private String classifyRiskCategory(PatientMedicalDataDTO medicalData) {
-            if (medicalData.getExang() == 1 && medicalData.getOldpeak() > 2.0)
-                return "Exercise-Induced Ischemic Risk Pattern";
+        if (medicalData.getExang() == 1 && medicalData.getOldpeak() > 2.0)
+            return "Exercise-Induced Ischemic Risk Pattern";
 
-            else if (medicalData.getChol() > 240 && medicalData.getCp() >= 3)
-                return "Atherosclerotic Risk Pattern";
+        else if (medicalData.getChol() > 240 && medicalData.getCp() >= 3)
+            return "Atherosclerotic Risk Pattern";
 
-            else if (medicalData.getTrestbps() >= 140)
-                return "Hypertensive Cardiac Stress Pattern";
+        else if (medicalData.getTrestbps() >= 140)
+            return "Hypertensive Cardiac Stress Pattern";
 
-            else if (medicalData.getFbs() == 1 && medicalData.getCp() >= 2)
-                return "Diabetes-Associated Cardiac Risk";
+        else if (medicalData.getFbs() == 1 && medicalData.getCp() >= 2)
+            return "Diabetes-Associated Cardiac Risk";
 
-            else if (medicalData.getRestecg() > 1)
-                return "ECG Abnormality Pattern";
+        else if (medicalData.getRestecg() > 1)
+            return "ECG Abnormality Pattern";
 
-            else if (medicalData.getThal() < 120 && medicalData.getOldpeak() > 1.0)
-                return "Reduced Cardiac Performance Pattern";
+        else if (medicalData.getThal() < 120 && medicalData.getOldpeak() > 1.0)
+            return "Reduced Cardiac Performance Pattern";
 
-            else if (medicalData.getCa() >= 2 || medicalData.getThal() >= 6)
-                return "Severe Cardiovascular Risk Pattern";
+        else if (medicalData.getCa() >= 2 || medicalData.getThal() >= 6)
+            return "Severe Cardiovascular Risk Pattern";
 
-            return "General Cardiac Risk Pattern";
+        return "General Cardiac Risk Pattern";
     }
 }

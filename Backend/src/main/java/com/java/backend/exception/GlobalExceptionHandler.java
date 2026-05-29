@@ -49,6 +49,14 @@ public class GlobalExceptionHandler {
         });
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
+    
+    @ExceptionHandler(DoctorNotAvailableException.class)
+    public ResponseEntity<Map<String, Object>> handleDoctorNotAvailableException(DoctorNotAvailableException ex){
+        Map<String , Object> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        error.put("status", HttpStatus.CONFLICT.value());
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
 
 
     @ExceptionHandler(Exception.class)

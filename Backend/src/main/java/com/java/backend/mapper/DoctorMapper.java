@@ -37,7 +37,11 @@ public class DoctorMapper {
         dto.setCountry(address.getCountry());
 
         dto.setSpecialization(doctor.getSpecialization());
-        dto.setWorkTime(doctor.getWorkTime());
+        dto.setFromDay(doctor.getFromDay());
+        dto.setToDay(doctor.getToDay());
+        dto.setFromTime(doctor.getFromTime());
+        dto.setToTime(doctor.getToTime());
+
 
         return dto;
     }
@@ -67,7 +71,10 @@ public class DoctorMapper {
 
         // Mapping Doctor-specific fields
         doctor.setSpecialization(dto.getSpecialization());
-        doctor.setWorkTime(dto.getWorkTime());
+        doctor.setFromDay(dto.getFromDay());
+        doctor.setToDay(dto.getToDay());
+        doctor.setFromTime(dto.getFromTime());
+        doctor.setToTime(dto.getToTime());
         
         roleRepository.findByName("DOCTOR")
                 .ifPresent(doctor::setRole);

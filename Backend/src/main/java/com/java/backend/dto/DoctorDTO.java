@@ -4,6 +4,10 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;
 
+import java.time.DayOfWeek;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
 @Data
 public class DoctorDTO {
     private Long id;
@@ -55,7 +59,17 @@ public class DoctorDTO {
     @Size(min = 3, message = "At least 3 characters in Specialization")
     private String specialization;
 
-    @NotNull(message = "Work Time can not be null")
-    private String workTime;
+    @NotNull(message = "From day cannot be null")
+    private DayOfWeek fromDay;
+
+    @NotNull(message = "To day cannot be null")
+    private DayOfWeek toDay;
+
+    @NotNull(message = "From time cannot be null")
+    private LocalTime fromTime;
+
+    @NotNull(message = "To time cannot be null")
+    private LocalTime toTime;
+
 }
 

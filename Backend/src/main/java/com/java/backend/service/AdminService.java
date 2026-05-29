@@ -1,20 +1,20 @@
 package com.java.backend.service;
 
 import com.java.backend.dto.DoctorDTO;
+import com.java.backend.dto.PatientMedicalTestsViewDTO;
 import com.java.backend.dto.PersonDTO;
-import com.java.backend.dto.PredictionResultDTO;
 import com.java.backend.exception.EmailAlreadyUsedException;
 import com.java.backend.exception.UserNotFoundException;
 import com.java.backend.mapper.DoctorMapper;
+import com.java.backend.mapper.MedicalTestsMapper;
 import com.java.backend.mapper.PersonMapper;
-import com.java.backend.mapper.PredictionMapper;
 import com.java.backend.model.Doctor;
+import com.java.backend.model.MedicalTest;
 import com.java.backend.model.Person;
-import com.java.backend.model.Prediction;
 import com.java.backend.repository.DoctorRepository;
 import com.java.backend.repository.PatientRepository;
 import com.java.backend.repository.PersonRepository;
-import com.java.backend.repository.PredictionRepository;
+import com.java.backend.repository.MedicalTestRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,19 +29,19 @@ public class AdminService {
     private final PersonRepository personRepository;
     private final DoctorRepository doctorRepository;
     private final PatientRepository patientRepository;
-    private final PredictionRepository predictionRepository;
+    private final MedicalTestRepository medicalTestRepository;
     private final DoctorMapper doctorMapper;
     private final PersonMapper personMapper;
-    private final PredictionMapper predictionMapper;
+    private MedicalTestsMapper medicalTestsMapper;
 
-    public AdminService(PersonRepository personRepository, PredictionRepository predictionRepository, DoctorRepository doctorRepository, PatientRepository patientRepository, DoctorMapper doctorMapper, PersonMapper personMapper, PredictionMapper predictionMapper) {
+    public AdminService(PersonRepository personRepository,MedicalTestsMapper medicalTestsMapper, MedicalTestRepository medicalTestRepository, DoctorRepository doctorRepository, PatientRepository patientRepository, DoctorMapper doctorMapper, PersonMapper personMapper) {
         this.personRepository = personRepository;
-        this.predictionRepository = predictionRepository;
+        this.medicalTestRepository = medicalTestRepository;
         this.doctorRepository = doctorRepository;
         this.patientRepository = patientRepository;
         this.doctorMapper = doctorMapper;
         this.personMapper = personMapper;
-        this.predictionMapper = predictionMapper;
+        this.medicalTestsMapper = medicalTestsMapper;
     }
 
     public List<PersonDTO> getAllUsersExceptAdmins(String email) {
@@ -66,16 +66,15 @@ public class AdminService {
 
 
         if(person.get().getRole().getName().equals("DOCTOR")) {
-            patientRepository.removeDoctorFromPatients(id);
             doctorRepository.deleteById(id);
         }else
             patientRepository.deleteById(id);
         personRepository.deleteById(id);
     }
 
-    public List<PredictionResultDTO> getAllPredictions() {
-        List<Prediction> predictionList =  predictionRepository.findAll();
-        return predictionList.stream().map(predictionMapper::toDTO).toList();
+    public List<PatientMedicalTestsViewDTO> getMedicalTestsDTOS() {
+        List<MedicalTest> medicalTestList =  medicalTestRepository.findAll();
+        return medicalTestList.stream().map(medicalTestsMapper::toDTO).toList();
     }
 
     public Map<String, String> registerNewDoctor(DoctorDTO doctorDTO) {
