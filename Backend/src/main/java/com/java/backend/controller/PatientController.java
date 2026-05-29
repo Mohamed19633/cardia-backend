@@ -55,7 +55,6 @@ public class PatientController {
         return ResponseEntity.ok(patientDTO);
     }
 
-
     @GetMapping("/me/appointments")
     public ResponseEntity<List<AppointmentListPatientViewDTO>> viewAppointments(@AuthenticationPrincipal UserDetails userDetails) {
         String email = userDetails.getUsername();
@@ -77,6 +76,7 @@ public class PatientController {
         List<PrescriptionDTO> patientPrescriptionDTOS = patientService.getPatientPrescriptions(email);
         return ResponseEntity.ok(patientPrescriptionDTOS);
     }
+
 
     @PutMapping("/update")
     public ResponseEntity<Map<String, String>> updatePatient(@RequestBody @Valid PatientDTO patientDTO, 
