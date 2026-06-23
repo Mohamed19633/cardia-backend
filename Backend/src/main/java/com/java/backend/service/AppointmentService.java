@@ -4,6 +4,8 @@ import com.java.backend.repository.AppointmentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 @Transactional
 public class AppointmentService {
@@ -15,6 +17,8 @@ public class AppointmentService {
     }
 
     public void updateAppointments() {
-        appointmentRepository.updateAppointments();
+        appointmentRepository.updateAppointmentsStatus();
+        LocalDateTime cutoffTime = LocalDateTime.now().minusDays(2);
+        appointmentRepository.deletePassedAndCancelledAppointmentsBy2Days(cutoffTime);
     }
 }

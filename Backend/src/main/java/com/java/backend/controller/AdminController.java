@@ -34,11 +34,11 @@ public class AdminController {
     }
 
     @GetMapping("/users")
-    public ResponseEntity<List<PersonDTO>> viewAllUsers(@AuthenticationPrincipal UserDetails userDetails){
-        // get the authenticated person from persistence layer
-        String email = userDetails.getUsername();
-        
-        List<PersonDTO> users =  adminService.getAllUsersExceptAdmins(email);
+    public ResponseEntity<List<PersonDTO>> viewAllUsers(){
+
+        List<PersonDTO> users =  adminService.getAllUsersExceptAdmins();
+        if(users.isEmpty())
+            return ResponseEntity.noContent().build();
         return  ResponseEntity.ok(users);
     }
 
@@ -57,6 +57,8 @@ public class AdminController {
     @GetMapping("/medical-tests")
     public  ResponseEntity<List<PatientMedicalTestsViewDTO>> viewAllMedicalTests(){
        List<PatientMedicalTestsViewDTO> medicalTestsViewDTOS =  adminService.getMedicalTestsDTOS();
+       if(medicalTestsViewDTOS.isEmpty())
+           return  ResponseEntity.noContent().build();
        return ResponseEntity.ok(medicalTestsViewDTOS);
     }
 
@@ -74,7 +76,10 @@ public class AdminController {
 
     @GetMapping("/appointments")
     public ResponseEntity<List<AppointmentListAdminViewDTO>> getAllAppointments(){
-        return ResponseEntity.ok(adminService.getAllAppointment());
+        List<AppointmentListAdminViewDTO> appointmentListAdminViewDTOS = adminService.getAllAppointment();
+        if(appointmentListAdminViewDTOS.isEmpty())
+            return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(appointmentListAdminViewDTOS);
     }
     
     @DeleteMapping("/appointment/{appointmentId}")

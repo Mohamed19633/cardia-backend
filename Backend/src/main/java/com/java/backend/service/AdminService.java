@@ -53,7 +53,7 @@ public class AdminService {
         this.appointmentMapper = appointmentMapper;
     }
 
-    public List<PersonDTO> getAllUsersExceptAdmins(String email) {
+    public List<PersonDTO> getAllUsersExceptAdmins() {
         //get all users except admins from person repository
         List<Person> users = personRepository.findAllExceptAdmins();
         return  users.stream().map(personMapper::toDto).toList();

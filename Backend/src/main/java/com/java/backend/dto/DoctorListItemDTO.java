@@ -61,6 +61,7 @@ public class DoctorListItemDTO {
 
     }
 
+    // used in PersonRepository
     public DoctorListItemDTO(Long id, String name, String contactNumber, String streetAddress, String city, String state, String country, String specialization, DayOfWeek fromDay, DayOfWeek toDay, LocalTime fromTime, LocalTime toTime){
         this.id = id;
         this.name = name;
