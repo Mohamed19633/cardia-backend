@@ -105,4 +105,5 @@ public class DoctorService {
         prescriptiondto.setPrescriptionDate(LocalDateTime.now());
         return prescriptiondto;
     }
+
 }

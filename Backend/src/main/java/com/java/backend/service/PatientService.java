@@ -70,7 +70,8 @@ public class PatientService {
         return map;
     }
 
-    public String updatePatient(@Valid PatientDTO patientDTO, Patient existingPatient) {
+    public String updatePatient(@Valid PatientDTO patientDTO, String patientEmail) {
+        Patient existingPatient = getPatientByEmail(patientEmail);
         Patient patient = patientMapper.toPatientEntity(patientDTO, "EDIT", existingPatient);
 
         patientRepository.save(patient);// return will never be null.
@@ -123,7 +124,7 @@ public class PatientService {
         return false;
     }
 
-    public PredictionResultDTO predictHeartDisease(PatientMedicalDataDTO patientMedicalDataDTO, UserDetails userDetails) {
+    public PredictionResultDTO predictHeartDisease(PatientMedicalDataDTO patientMedicalDataDTO, String patientEmail) {
         PredictionResultDTO predictionResultDTO = predictionWebClient.post()
                 .uri("/predict")
                 .bodyValue(patientMedicalDataDTO)
@@ -137,14 +138,14 @@ public class PatientService {
                 .bodyToMono(PredictionResultDTO.class)
                 .block();
 
-        customizeResult(predictionResultDTO, patientMedicalDataDTO, userDetails);
+        customizeResult(predictionResultDTO, patientMedicalDataDTO, patientEmail);
         return predictionResultDTO;
     }
 
-    private void customizeResult(PredictionResultDTO predictionResultDTO, PatientMedicalDataDTO patientMedicalDataDTO, UserDetails userDetails) {
+    private void customizeResult(PredictionResultDTO predictionResultDTO, PatientMedicalDataDTO patientMedicalDataDTO, String email) {
         String diagnosis = predictionResultDTO.getDiagnosis(), recommendationMessage = "Enjoy your day!", riskCategory = "";
         Set<DoctorListItemDTO> recommendedDoctors = new LinkedHashSet<>();
-        Patient patient = patientRepository.findByEmail(userDetails.getUsername()).orElseThrow(() -> new UserNotFoundException("Patient not found"));
+        Patient patient = patientRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("Patient not found"));
         if (diagnosis != null && !diagnosis.equals("Healthy")) {
             recommendationMessage = "Please consult a healthcare professional.";
             riskCategory = classifyRiskCategory(patientMedicalDataDTO);
@@ -156,7 +157,7 @@ public class PatientService {
         predictionResultDTO.setRiskCategory(riskCategory);
         predictionResultDTO.setRecommendedDoctors(recommendedDoctors);
         predictionResultDTO.setDateAndTime(LocalDateTime.now());
-        predictionResultDTO.setBelongsTo(userDetails.getUsername());
+        predictionResultDTO.setBelongsTo(email);
 
         MedicalTest medicalTest = medicalTestsMapper.toEntity(predictionResultDTO, patientMedicalDataDTO, patient);
         medicalTestRepository.save(medicalTest);

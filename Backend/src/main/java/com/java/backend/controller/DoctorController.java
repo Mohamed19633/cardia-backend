@@ -5,7 +5,9 @@ import com.java.backend.service.DoctorService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,28 +24,20 @@ public class DoctorController {
     }
 
     @GetMapping("/appointments")
-    public ResponseEntity<List<AppointmentListDoctorViewDTO>> viewAppointments(@AuthenticationPrincipal UserDetails userDetails){
-        // get person from persistence layer
-        String email = userDetails.getUsername();
+    public ResponseEntity<List<AppointmentListDoctorViewDTO>> viewAppointments(@RequestParam("doctorEmail") String doctorEmail){
 
-        List<AppointmentListDoctorViewDTO> appointmentListDoctorViewDTOS = doctorService.getAppointmentListDTO(email);
+        List<AppointmentListDoctorViewDTO> appointmentListDoctorViewDTOS = doctorService.getAppointmentListDTO(doctorEmail);
         return ResponseEntity.ok(appointmentListDoctorViewDTOS);
     }
 
     @GetMapping("/appointment/{appointmentId}/medical-tests")
-    public ResponseEntity<List<PatientMedicalTestsViewDTO>> viewPatientMedicalTests(@PathVariable Long appointmentId,
-                                                                                       @AuthenticationPrincipal UserDetails userDetails) {
-        // get person from persistence layer
-        String doctorEmail = userDetails.getUsername();
-
+    public ResponseEntity<List<PatientMedicalTestsViewDTO>> viewPatientMedicalTests( @RequestParam("doctorEmail") String doctorEmail,@PathVariable Long appointmentId) {
         List<PatientMedicalTestsViewDTO> patientMedicalTestsViewDTOS = doctorService.getPatientMedicalTestsViewDTOS(appointmentId,doctorEmail);
         return ResponseEntity.ok(patientMedicalTestsViewDTOS);
     }
 
     @GetMapping("/appointment/{appointmentId}/prescription")
-    public ResponseEntity<PrescriptionDTO> initializePrescription(@PathVariable Long appointmentId, @AuthenticationPrincipal UserDetails userDetails) {
-        // get person from persistence layer
-        String doctorEmail = userDetails.getUsername();
+    public ResponseEntity<PrescriptionDTO> initializePrescription(@RequestParam("doctorEmail") String doctorEmail,@PathVariable Long appointmentId) {
 
         PrescriptionDTO prescriptiondto = doctorService.initializePrescription(appointmentId,doctorEmail);
         return ResponseEntity.ok(prescriptiondto);

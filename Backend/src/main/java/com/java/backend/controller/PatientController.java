@@ -42,11 +42,10 @@ public class PatientController {
 
 
     @GetMapping("/me")
-    public ResponseEntity<PatientDTO> viewPersonalDetails(@AuthenticationPrincipal UserDetails userDetails){
+    public ResponseEntity<PatientDTO> viewPersonalDetails(@RequestParam("patientEmail") String patientEmail){
 
-        // get person from persistence layer
-        String email = userDetails.getUsername();
-        Patient patient = patientService.getPatientByEmail(email);
+
+        Patient patient = patientService.getPatientByEmail(patientEmail);
 
         // map it to person DTO
         PatientDTO patientDTO = patientMapper.toPatientDTO(patient);
@@ -56,67 +55,61 @@ public class PatientController {
     }
 
     @GetMapping("/me/appointments")
-    public ResponseEntity<List<AppointmentListPatientViewDTO>> viewAppointments(@AuthenticationPrincipal UserDetails userDetails) {
-        String email = userDetails.getUsername();
-        List<AppointmentListPatientViewDTO> appointmentListPatientViewDTOS = new ArrayList<>();
-        appointmentListPatientViewDTOS.addAll(patientService.getPatientAppointment(email));
+    public ResponseEntity<List<AppointmentListPatientViewDTO>> viewAppointments(@RequestParam("patientEmail") String patientEmail) {
+
+        List<AppointmentListPatientViewDTO> appointmentListPatientViewDTOS = patientService.getPatientAppointment(patientEmail);
+
         return  ResponseEntity.ok(appointmentListPatientViewDTOS);
     }
 
     @GetMapping("/me/medical-tests")
-    public ResponseEntity<List<PatientMedicalTestsViewDTO>> viewPatientMedicalTests(@AuthenticationPrincipal UserDetails userDetails){
-        String email = userDetails.getUsername();
-        List<PatientMedicalTestsViewDTO> patientMedicalTestsViewDTOS = patientService.getPatientMedicalTests(email);
+    public ResponseEntity<List<PatientMedicalTestsViewDTO>> viewPatientMedicalTests(@RequestParam("patientEmail") String patientEmail){
+
+        List<PatientMedicalTestsViewDTO> patientMedicalTestsViewDTOS = patientService.getPatientMedicalTests(patientEmail);
+
         return ResponseEntity.ok(patientMedicalTestsViewDTOS);
     }
 
     @GetMapping("/me/prescriptions")
-    public ResponseEntity<List<PrescriptionDTO>> viewPatientPrescriptions(@AuthenticationPrincipal UserDetails userDetails){
-        String email = userDetails.getUsername();
-        List<PrescriptionDTO> patientPrescriptionDTOS = patientService.getPatientPrescriptions(email);
+    public ResponseEntity<List<PrescriptionDTO>> viewPatientPrescriptions(@RequestParam("patientEmail") String patientEmail){
+        List<PrescriptionDTO> patientPrescriptionDTOS = patientService.getPatientPrescriptions(patientEmail);
         return ResponseEntity.ok(patientPrescriptionDTOS);
     }
 
 
     @PutMapping("/update")
-    public ResponseEntity<Map<String, String>> updatePatient(@RequestBody @Valid PatientDTO patientDTO, 
-                                                           @AuthenticationPrincipal UserDetails userDetails){
+    public ResponseEntity<Map<String, String>> updatePatient(@RequestParam("patientEmail") String patientEmail,@RequestBody @Valid PatientDTO patientDTO){
 
-        String email = userDetails.getUsername();
-        Patient patient = patientService.getPatientByEmail(email);
-
-
-        String result = patientService.updatePatient(patientDTO,patient);
+        String result = patientService.updatePatient(patientDTO,patientEmail);
 
         return ResponseEntity.ok(Map.of("Message",result));
     }
 
 
     @PostMapping("/predict")
-    public ResponseEntity<PredictionResultDTO> predictionHeartDisease(@AuthenticationPrincipal UserDetails userDetails, @RequestBody @Valid PatientMedicalDataDTO patientMedicalDataDTO){
-        PredictionResultDTO predictionResultDTO = patientService.predictHeartDisease(patientMedicalDataDTO,userDetails);
+    public ResponseEntity<PredictionResultDTO> predictionHeartDisease(@RequestParam("patientEmail") String patientEmail, @RequestBody @Valid PatientMedicalDataDTO patientMedicalDataDTO){
+        PredictionResultDTO predictionResultDTO = patientService.predictHeartDisease(patientMedicalDataDTO,patientEmail);
         return ResponseEntity.ok(predictionResultDTO);
     }
 
 
     @GetMapping("/doctors")
-    public ResponseEntity<List<DoctorListItemDTO>>viewAllDoctors(){
+    public ResponseEntity<List<DoctorListItemDTO>>viewAllDoctors(@RequestParam("patientEmail") String patientEmail){ // this parameter used in AOP
         List<DoctorListItemDTO> doctors = doctorService.getAllDoctors();
         return ResponseEntity.ok(doctors);
     }
 
 
     @PostMapping("/book-appointment/{doctorId}")
-    public ResponseEntity<String> bookAppointment(@AuthenticationPrincipal UserDetails userDetails,
+    public ResponseEntity<String> bookAppointment(@RequestParam("patientEmail") String patientEmail,
                                                   @PathVariable Long doctorId, @RequestParam String connectivityType, @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime time){
-        String patientEmail = userDetails.getUsername();
         ConnectivityType connectivity = connectivityType.toUpperCase().equals("ONLINE")? ConnectivityType.ONLINE : ConnectivityType.OFFLINE;
         Appointment appointment = patientService.bookAppointment(patientEmail, doctorId,connectivity, time);
         return ResponseEntity.ok("Appointment confirmed successfully\n"+appointment.getMeetingLink());
     }
 
     @PatchMapping("/cancel-appointment/{appointmentId}")
-    public ResponseEntity<String> cancelAppointment(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long appointmentId) {
+    public ResponseEntity<String> cancelAppointment(@RequestParam("patientEmail") String patientEmail, @PathVariable Long appointmentId) {
         patientService.cancelAppointment(appointmentId);
         return ResponseEntity.ok("Appointment Cancelled Successfully");
     }

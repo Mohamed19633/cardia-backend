@@ -185,7 +185,7 @@ class AdminControllerTest{
                 .andExpect(status().isNotFound());
 
         verify(medicalTestService, times(1)).getPatientOfMedicalTest(id);
-        verify(adminService, times(0)).viewUser(id);
+        verify(adminService, never()).viewUser(id);
     }
 
     @Test
