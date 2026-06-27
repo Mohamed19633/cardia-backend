@@ -37,7 +37,7 @@ public class Doctor extends Person{
     @NotNull(message = "To time cannot be null")
     private LocalTime toTime;
 
-    @OneToMany(mappedBy = "doctor", cascade = CascadeType.PERSIST)
+    @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL)
     private List<Appointment> appointments = new ArrayList<>();
 
 }

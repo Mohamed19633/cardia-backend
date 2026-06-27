@@ -56,7 +56,7 @@ public class AuthenticationController {
         // update appointments
         appointmentService.updateAppointments();
 
-        return ResponseEntity.ok(Map.of("message", "Login Successfully!. Welcome "+loginRequestDTO.email()));
+        return ResponseEntity.ok(Map.of("email",loginRequestDTO.email(), "role", adminService.getUserRole(loginRequestDTO.email())));
     }
 
 

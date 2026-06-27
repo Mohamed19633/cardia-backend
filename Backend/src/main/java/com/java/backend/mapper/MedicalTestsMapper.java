@@ -15,7 +15,8 @@ public class MedicalTestsMapper {
         }
 
         PatientMedicalTestsViewDTO dto = new PatientMedicalTestsViewDTO();
-        dto.setPatientId(medicalTest.getPatient() != null ? medicalTest.getPatient().getId() : null);
+        dto.setTestId(medicalTest.getId());
+        dto.setPatientUserName(medicalTest.getPatient() != null ? medicalTest.getPatient().getUserName() : null);
         dto.setAge(medicalTest.getAge());
         dto.setSex(medicalTest.getSex());
         dto.setCp(medicalTest.getCp());

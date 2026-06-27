@@ -85,7 +85,7 @@ class DoctorControllerTest {
     void viewPatientMedicalTests_ShouldReturnListOfMedicalTests_WhenValid() throws Exception {
         Long appointmentId = 1L;
         PatientMedicalTestsViewDTO test1 = new PatientMedicalTestsViewDTO();
-        test1.setPatientId(101L);
+        test1.setPatientUserName("pati1");
         test1.setAge(30);
         List<PatientMedicalTestsViewDTO> mockTests = List.of(test1);
 
@@ -179,8 +179,8 @@ class DoctorControllerTest {
         PrescriptionDTO prescriptionDTO = new PrescriptionDTO();
         prescriptionDTO.setPatientName("Patient One");
         prescriptionDTO.setDoctorName("Doctor One");
-        prescriptionDTO.setPrescriptionDate(LocalDateTime.now());
-        prescriptionDTO.setContent(List.of("Aspirin 100mg daily"));
+//        prescriptionDTO.setPrescriptionDate(LocalDateTime.now());
+//        prescriptionDTO.setContent(List.of("Aspirin 100mg daily"));
 
         doNothing().when(doctorService).savePrescription(any(PrescriptionDTO.class));
 

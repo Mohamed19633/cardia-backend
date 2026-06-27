@@ -4,7 +4,6 @@ import com.java.backend.dto.AppointmentListAdminViewDTO;
 import com.java.backend.dto.DoctorDTO;
 import com.java.backend.dto.PatientMedicalTestsViewDTO;
 import com.java.backend.dto.PersonDTO;
-import com.java.backend.mapper.AppointmentMapper;
 import com.java.backend.model.Patient;
 import com.java.backend.repository.AppointmentRepository;
 import com.java.backend.service.AdminService;
@@ -12,8 +11,6 @@ import com.java.backend.service.MedicalTestService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,7 +31,7 @@ public class AdminController {
     }
 
     @GetMapping("/users")
-    public ResponseEntity<List<PersonDTO>> viewAllUsers(){
+    public ResponseEntity<List<PersonDTO>> viewAllUsersExceptAdmins(){
 
         List<PersonDTO> users =  adminService.getAllUsersExceptAdmins();
         if(users.isEmpty())
@@ -47,6 +44,8 @@ public class AdminController {
         PersonDTO personDTO = adminService.viewUser(id);
         return ResponseEntity.ok(personDTO);
     }
+
+    
 
     @DeleteMapping("/users/{id}")
     public ResponseEntity<String> deleteUser(@PathVariable Long id){

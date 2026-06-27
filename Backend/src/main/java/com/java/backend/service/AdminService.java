@@ -16,6 +16,9 @@ import com.java.backend.model.MedicalTest;
 import com.java.backend.model.Person;
 import com.java.backend.repository.*;
 import com.java.backend.utilities.AppointmentStatus;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.data.querydsl.ListQuerydslPredicateExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,11 +40,12 @@ public class AdminService {
     private final MedicalTestRepository medicalTestRepository;
     private final DoctorMapper doctorMapper;
     private final PersonMapper personMapper;
+    private final AdminRepository adminRepository;
     private MedicalTestsMapper medicalTestsMapper;
     private AppointmentRepository appointmentRepository;
     private AppointmentMapper appointmentMapper;
 
-    public AdminService(PersonRepository personRepository,AppointmentMapper appointmentMapper, AppointmentRepository appointmentRepository, MedicalTestsMapper medicalTestsMapper, MedicalTestRepository medicalTestRepository, DoctorRepository doctorRepository, PatientRepository patientRepository, DoctorMapper doctorMapper, PersonMapper personMapper) {
+    public AdminService(PersonRepository personRepository, AppointmentMapper appointmentMapper, AppointmentRepository appointmentRepository, MedicalTestsMapper medicalTestsMapper, MedicalTestRepository medicalTestRepository, DoctorRepository doctorRepository, PatientRepository patientRepository, DoctorMapper doctorMapper, PersonMapper personMapper, AdminRepository adminRepository) {
         this.personRepository = personRepository;
         this.medicalTestRepository = medicalTestRepository;
         this.doctorRepository = doctorRepository;
@@ -51,6 +55,7 @@ public class AdminService {
         this.medicalTestsMapper = medicalTestsMapper;
         this.appointmentRepository = appointmentRepository;
         this.appointmentMapper = appointmentMapper;
+        this.adminRepository = adminRepository;
     }
 
     public List<PersonDTO> getAllUsersExceptAdmins() {
@@ -73,11 +78,12 @@ public class AdminService {
             throw new UserNotFoundException("No users with id: "+id);
 
 
+        personRepository.deleteById(id);
         if(person.get().getRole().getName().equals("DOCTOR")) {
             doctorRepository.deleteById(id);
-        }else
+        }else {
             patientRepository.deleteById(id);
-        personRepository.deleteById(id);
+        }
     }
 
     public List<PatientMedicalTestsViewDTO> getMedicalTestsDTOS() {
@@ -105,5 +111,10 @@ public class AdminService {
 
     public void deleteAppointmentById(Long appointmentId) {
         appointmentRepository.deleteById(appointmentId);
+    }
+
+    public String getUserRole(String email) {
+      Person person =  adminRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("No such user with this email"));
+      return person.getRole().getName();
     }
 }

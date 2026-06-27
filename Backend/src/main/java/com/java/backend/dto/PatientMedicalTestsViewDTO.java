@@ -5,7 +5,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 @Data
 public class PatientMedicalTestsViewDTO {
-    private Long patientId;
+
+    private String patientUserName;
+
+    private Long testId;
 
     private Integer age;
 

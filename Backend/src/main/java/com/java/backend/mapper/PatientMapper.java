@@ -16,18 +16,11 @@ public class PatientMapper {
 
    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
-    private final DoctorRepository doctorRepository;
-    private final MedicalTestsMapper medicalTestsMapper;
-    private final AppointmentMapper appointmentMapper;
-    private PrescriptionMapper prescriptionMapper;
 
-    public  PatientMapper(RoleRepository roleRepository, PrescriptionMapper prescriptionMapper , PasswordEncoder passwordEncoder, DoctorRepository doctorRepository, MedicalTestsMapper medicalTestsMapper, AppointmentMapper appointmentMapper){
+
+    public  PatientMapper(RoleRepository roleRepository, PasswordEncoder passwordEncoder){
         this.roleRepository= roleRepository;
         this.passwordEncoder = passwordEncoder;
-        this. doctorRepository =doctorRepository;
-        this.prescriptionMapper = prescriptionMapper;
-        this.medicalTestsMapper = medicalTestsMapper;
-        this.appointmentMapper = appointmentMapper;
     }
 
     public  Patient toPatientEntity(PatientDTO patientDTO,String requestType,Patient existingPatient) {
@@ -47,7 +40,8 @@ public class PatientMapper {
             address = existingPatient.getAddress();
         }
 
-        patient.setName(patientDTO.getName());
+//        if(patientDTO.getName() != null)
+            patient.setName(patientDTO.getName());
         patient.setUserName(patientDTO.getUserName());
         patient.setContactNumber(patientDTO.getContactNumber());
 

@@ -44,7 +44,7 @@ public class DoctorController {
     }
 
     @PostMapping("/save-prescription")
-    public ResponseEntity<String> savePrescription(@RequestBody @Valid PrescriptionDTO prescriptionDTO) {
+    public ResponseEntity<String> savePrescription(@RequestParam("doctorEmail") String doctorEmail, @RequestBody @Valid PrescriptionDTO prescriptionDTO) {
 
         doctorService.savePrescription(prescriptionDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body("Prescription saved successfully!");

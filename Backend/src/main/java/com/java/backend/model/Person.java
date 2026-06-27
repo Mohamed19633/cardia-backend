@@ -44,7 +44,7 @@ public class Person {
     @Range(min = 0, max = 150, message = "Age must be between 0 and 150")
     private Integer age;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn // default: nullable = true
     private Address address;//one to one- uni
 

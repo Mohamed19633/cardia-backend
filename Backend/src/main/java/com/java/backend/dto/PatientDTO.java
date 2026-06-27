@@ -27,7 +27,6 @@ public class PatientDTO {
     )
     private String email;
 
-    @Size(min = 5, message = "at least 5 characters required in the password")
     private String password;
 
     @NotBlank(message = "Phone number is required")

@@ -15,7 +15,7 @@ import java.lang.reflect.Parameter;
 @Component
 public class CheckAuthoritiesAspect {
 
-    @Before("execution(* com.java.backend.controller.DoctorController.*(..))+ args(.., doctorEmail,..)")
+    @Before("execution(* com.java.backend.controller.DoctorController.*(..))")
     public void checkDoctorAuthorization(JoinPoint joinPoint){
         String authorizedDoctorEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         Object[] args = joinPoint.getArgs();
@@ -25,7 +25,7 @@ public class CheckAuthoritiesAspect {
             throw new IllegalCallerException("Doctor with email " + inputDoctorEmail + " is not authorized");
     }
 
-    @Before("execution(* com.java.backend.controller.PatientController.*(..)) + args(.., patientEmail,..)")
+    @Before("!execution(* com.java.backend.controller.PatientController.register(..)) && "+"execution(* com.java.backend.controller.PatientController.*(..))")
     public void checkPatientAuthorization(JoinPoint joinPoint){
         String authorizedPatientEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         Object[] args = joinPoint.getArgs();

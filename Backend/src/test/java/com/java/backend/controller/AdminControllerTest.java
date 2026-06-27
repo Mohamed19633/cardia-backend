@@ -55,7 +55,7 @@ class AdminControllerTest{
     private ObjectMapper objectMapper;
 
     @Test
-    public void viewAllUsers_ShouldReturnListOfPersonDTO() throws Exception {
+    public void viewAllUsers_ExceptAdmins_ShouldReturnListOfPersonDTO() throws Exception {
         PersonDTO personDTO1 = new PersonDTO();
         PersonDTO personDTO2 = new PersonDTO();
         PersonDTO personDTO3 = new PersonDTO();

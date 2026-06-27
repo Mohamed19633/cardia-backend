@@ -22,6 +22,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 
 @Service
@@ -65,7 +68,7 @@ public class PatientService {
         Patient patient = patientRepository.save(patientMapper.toPatientEntity(patientDTO, "SAVE", null));
 
         Map<String, String> map = new HashMap<>();
-        map.put("message", "Registered Successfully");
+        map.put("email", patient.getEmail());
         map.put("role", patient.getRole().getName());
         return map;
     }
@@ -107,21 +110,37 @@ public class PatientService {
     }
 
     private boolean isDoctorAvailable(Doctor doctor, LocalDateTime appointmentTime) {
-        int fromDay = doctor.getFromDay().getValue(), toDay = doctor.getToDay().getValue(), appointDay = appointmentTime.getDayOfWeek().getValue();
-        if (fromDay > toDay && (appointDay <= toDay ||
-                appointDay >= fromDay)) {
-            if (appointmentTime.getHour() >= doctor.getFromTime().getHour() &&
-                    appointmentTime.getHour() <= doctor.getToTime().getHour()) {
-                return true;
-            }
-        } else if (fromDay < toDay && appointDay <= toDay &&
-                appointDay >= fromDay) {
-            if (appointmentTime.getHour() >= doctor.getFromTime().getHour() &&
-                    appointmentTime.getHour() <= doctor.getToTime().getHour()) {
-                return true;
-            }
+        // Assuming appointmentTime is in UTC, convert to local timezone
+        ZoneId egyptZone = ZoneId.of("Africa/Cairo");
+        ZonedDateTime utcDateTime = appointmentTime.atZone(ZoneId.of("UTC"));
+        ZonedDateTime localDateTime = utcDateTime.withZoneSameInstant(egyptZone);
+        LocalDateTime adjustedTime = localDateTime.toLocalDateTime();
+
+        int fromDay = doctor.getFromDay().getValue();
+        int toDay = doctor.getToDay().getValue();
+        int appointDay = adjustedTime.getDayOfWeek().getValue();
+
+        // Check if day is within range
+        boolean isDayValid;
+        if (fromDay > toDay) {
+            isDayValid = appointDay <= toDay || appointDay >= fromDay;
+        } else if (fromDay < toDay) {
+            isDayValid = appointDay >= fromDay && appointDay <= toDay;
+        } else {
+            // Same day
+            isDayValid = appointDay == fromDay;
         }
-        return false;
+
+        if (!isDayValid) {
+            return false;
+        }
+
+        // Check the time slot within the range
+        LocalTime appointmentTimeOnly = adjustedTime.toLocalTime();
+        boolean isTimeValid = !appointmentTimeOnly.isBefore(doctor.getFromTime())
+                && !appointmentTimeOnly.isAfter(doctor.getToTime());
+
+        return isTimeValid;
     }
 
     public PredictionResultDTO predictHeartDisease(PatientMedicalDataDTO patientMedicalDataDTO, String patientEmail) {
@@ -243,6 +262,7 @@ public class PatientService {
     }
 
     public void cancelAppointment(Long appointmentId) {
+       //TODO: make sure that this appointment belongs to the authenticated patient.
         Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new UserNotFoundException("No appointment with this id "+ appointmentId));
         if(appointment.getStatus().equals(AppointmentStatus.CONFIRMED)){
             appointment.setStatus(AppointmentStatus.CANCELLED);

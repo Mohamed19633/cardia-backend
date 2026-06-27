@@ -16,13 +16,13 @@ import java.util.List;
 public class Patient extends Person{
 
 
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.PERSIST)
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
     private List<Appointment> appointments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.PERSIST)
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
     private List<Prescription> prescriptions = new ArrayList<>();
 
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.PERSIST)
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
     private List<MedicalTest> medicalTestList = new ArrayList<>();
 
 }
