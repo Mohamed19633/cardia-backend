@@ -8,22 +8,22 @@ app = Flask(__name__)
 
 # --- Directory Configuration ---
 # Resolve the absolute path of the current file's directory
-BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+BASE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Goes up to root
 
 def get_full_path(file_name):
-    return os.path.join(BASE_PATH, file_name)
+    return os.path.join(BASE_PATH, 'model', file_name)
 
 # --- Model and Asset Loading ---
 try:
     # Loading serialized model, scaler, and label encoders
-    encoders = joblib.load(get_full_path('../model/label_encoders.pkl'))
-    model = joblib.load(get_full_path('../model/heart_disease_best_model.pkl'))
-    scaler = joblib.load(get_full_path('../model/scaler.pkl'))
+    encoders = joblib.load(get_full_path('label_encoders.pkl'))
+    model = joblib.load(get_full_path('heart_disease_best_model.pkl'))
+    scaler = joblib.load(get_full_path('scaler.pkl'))
 
-    # Optimized threshold determined during training to maintain ~91% Recall
+    # Optimized threshold determined during training to maintain ~85% Recall
     OPTIMIZED_THRESHOLD = 0.45
 
-    print(f"✅ Production assets loaded successfully from: {BASE_PATH}")
+    print(f"✅ Production assets loaded successfully from: {BASE_PATH}/model")
 except Exception as e:
     print(f"❌ Critical Error: Failed to load production assets. Details: {e}")
 
@@ -79,7 +79,7 @@ def predict():
             "diagnosis": "Potential Heart Disease Risk Detected" if prediction == 1 else "Healthy",
             "riskProbability": f"{round(probability * 100, 2)}%",
             "model_metadata": {
-                "target_recall": "91%",
+                "target_recall": "85.29%",
                 "operating_threshold": OPTIMIZED_THRESHOLD
             }
         })

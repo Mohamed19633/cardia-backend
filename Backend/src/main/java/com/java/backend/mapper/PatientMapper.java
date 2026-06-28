@@ -33,7 +33,7 @@ public class PatientMapper {
         if(requestType.equals("SAVE")){
             patient = new Patient();
             patient.setEmail(patientDTO.getEmail());
-            patient.setRole(roleRepository.findById(2L).get());
+            patient.setRole(roleRepository.findById(3L).get());
             patient.setPassword(passwordEncoder.encode(patientDTO.getPassword()));
             address = new Address();
         }else{
