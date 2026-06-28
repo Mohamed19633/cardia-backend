@@ -101,8 +101,16 @@ public class PatientController {
 
 
     @PostMapping("/book-appointment/{doctorId}")
+<<<<<<< HEAD
     public ResponseEntity<String> bookAppointment(@RequestParam("patientEmail") String patientEmail,
                                                   @PathVariable Long doctorId, @RequestParam String connectivityType, @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime time){
+=======
+    public ResponseEntity<String> bookAppointment(@AuthenticationPrincipal UserDetails userDetails,
+                                                  @PathVariable Long doctorId, @RequestParam(required = false) String connectivityType, @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime time){
+        if (connectivityType == null) connectivityType = "ONLINE";
+        if (time == null) time = LocalDateTime.now();
+        String patientEmail = userDetails.getUsername();
+>>>>>>> a65547f (Fix: Resolve CORS, update Global Exception keys, add /auth/me, and patch appointment parameters for frontend integration)
         ConnectivityType connectivity = connectivityType.toUpperCase().equals("ONLINE")? ConnectivityType.ONLINE : ConnectivityType.OFFLINE;
         Appointment appointment = patientService.bookAppointment(patientEmail, doctorId,connectivity, time);
         return ResponseEntity.ok("Appointment confirmed successfully\n"+appointment.getMeetingLink());

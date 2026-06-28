@@ -61,6 +61,16 @@ public class AuthenticationController {
 
 
 
+    @GetMapping("/me")
+    public ResponseEntity<Map<String, String>> me(@AuthenticationPrincipal UserDetails userDetails) {
+        String email = userDetails.getUsername();
+        String roleName = userDetails.getAuthorities().stream()
+                .findFirst()
+                .map(a -> a.getAuthority().replace("ROLE_", ""))
+                .orElse("UNKNOWN");
+        return ResponseEntity.ok(Map.of("email", email, "roleName", roleName));
+    }
+
     @GetMapping("/logout")
     public ResponseEntity<Map<String,String> >logout(HttpServletRequest request, @AuthenticationPrincipal UserDetails userDetails){
         if(userDetails == null)

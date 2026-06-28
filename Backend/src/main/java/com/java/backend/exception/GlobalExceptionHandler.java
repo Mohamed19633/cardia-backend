@@ -17,7 +17,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleUserNotFoundException(UserNotFoundException ex){
         Map<String , Object> error = new HashMap<>();
-        error.put("error", ex.getMessage());
+        error.put("message", ex.getMessage());
         error.put("status", HttpStatus.NOT_FOUND.value());
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
@@ -25,7 +25,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(EmailAlreadyUsedException.class)
     public ResponseEntity<Map<String, Object>> handleEmailAlreadyUsedException(EmailAlreadyUsedException ex){
         Map<String , Object> error = new HashMap<>();
-        error.put("error", ex.getMessage());
+        error.put("message", ex.getMessage());
         error.put("status", HttpStatus.IM_USED.value());
         return new ResponseEntity<>(error, HttpStatus.IM_USED);
     }
@@ -33,7 +33,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleBadCredentialsException(BadCredentialsException ex){
         Map<String , Object> error = new HashMap<>();
-        error.put("error", ex.getMessage());
+        error.put("message", ex.getMessage());
         error.put("status", HttpStatus.UNAUTHORIZED.value());
         return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
@@ -53,7 +53,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DoctorNotAvailableException.class)
     public ResponseEntity<Map<String, Object>> handleDoctorNotAvailableException(DoctorNotAvailableException ex){
         Map<String , Object> error = new HashMap<>();
-        error.put("error", ex.getMessage());
+        error.put("message", ex.getMessage());
         error.put("status", HttpStatus.CONFLICT.value());
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
@@ -61,7 +61,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoMedicalTestException.class)
     public ResponseEntity<Map<String, Object>> handleNoMedicalTestException(NoMedicalTestException ex){
         Map<String , Object> error = new HashMap<>();
-        error.put("error", ex.getMessage());
+        error.put("message", ex.getMessage());
         error.put("status", HttpStatus.UNPROCESSABLE_CONTENT.value());
         return new ResponseEntity<>(error, HttpStatus.UNPROCESSABLE_CONTENT);
     }
@@ -70,7 +70,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGlobalException(Exception ex){
         Map<String , Object> error = new HashMap<>();
-        error.put("error", ex.getMessage());
+        error.put("message", ex.getMessage());
         error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
