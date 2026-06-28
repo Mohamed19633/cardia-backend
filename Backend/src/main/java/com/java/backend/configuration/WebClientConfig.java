@@ -1,5 +1,6 @@
 package com.java.backend.configuration;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -8,9 +9,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
 public class WebClientConfig {
+    @Value("${PREDICTION_API}")
+    private String predictionAPIURL;
     @Bean
     public WebClient predictionWebClient() {
-        return WebClient.builder().baseUrl("http://127.0.0.1:5000").defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE).build();
+        return WebClient.builder().baseUrl(predictionAPIURL).defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE).build();
     }
 
 }
